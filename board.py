@@ -1,11 +1,13 @@
 import numpy as nm
 import copy
+from collections import deque
 
 
 class State:
     def __init__(self, size):
         self.size = size
         self.board = nm.full((size, size), fill_value="0", dtype="object")
+        self.parent = None
 
     #############################################
     def color(self, i, j, color, shape):
@@ -16,6 +18,14 @@ class State:
             "color": color,
             "shape": shape,
         }
+
+    def get_hash(self):
+        return hash(
+            tuple(
+                tuple((cell["color"], cell["shape"]) for cell in row)
+                for row in self.board
+            )
+        )
 
     #############################################
 
@@ -43,11 +53,11 @@ class State:
             row1 += 1
 
     #############################################
-
-    def chekc_win(self):
-        for row in self.last_board_state:
-            for i in row:
-                if i["color"] not in ["White", "Black"]:
+    @classmethod
+    def chekc_win(cls, state):
+        for i in range(0, state.size):
+            for j in range(0, state.size):
+                if state.board[i][j]["color"] not in ["White", "Black"]:
                     return False
 
         print("win")
@@ -98,28 +108,31 @@ class State:
             #######################################
 
     #######################################################################################################################
+    @classmethod
+    def right(cls, current_state):
+        next_state = copy.deepcopy(current_state)
+        # if not hasattr(self, "last_board_state"):
+        #     self.last_board_state = self.board
 
-    def right(self):
+        # temp_board = copy.deepcopy(self.last_board_state)
 
-        if not hasattr(self, "last_board_state"):
-            self.last_board_state = self.board
-
-        temp_board = copy.deepcopy(self.last_board_state)
-
-        for i in range(self.size):
+        for i in range(next_state.size):
             moved = False
 
-            j = self.size - 2
+            j = next_state.size - 2
             while j >= 0:
-                current_color = temp_board[i][j]["color"]
+                current_color = next_state.board[i][j]["color"]
                 goal_color = f"goal_{current_color}"
 
-                if j + 1 < self.size and temp_board[i][j + 1]["color"] == goal_color:
+                if (
+                    j + 1 < next_state.size
+                    and next_state.board[i][j + 1]["color"] == goal_color
+                ):
 
-                    temp_board[i][j]["color"] = "White"
-                    temp_board[i][j]["shape"] = "⬜️"
-                    temp_board[i][j + 1]["color"] = "White"
-                    temp_board[i][j + 1]["shape"] = "⬜️"
+                    next_state.board[i][j]["color"] = "White"
+                    next_state.board[i][j]["shape"] = "⬜️"
+                    next_state.board[i][j + 1]["color"] = "White"
+                    next_state.board[i][j + 1]["shape"] = "⬜️"
                     moved = True
 
                     j -= 1
@@ -135,18 +148,18 @@ class State:
                         continue
 
                     new_j = j
-                    while new_j + 1 < self.size and (
-                        temp_board[i][new_j + 1]["color"] == "White"
+                    while new_j + 1 < next_state.size and (
+                        next_state.board[i][new_j + 1]["color"] == "White"
                         or (
-                            temp_board[i][new_j + 1]["color"].startswith("goal_")
-                            and temp_board[i][new_j + 1]["color"] != goal_color
+                            next_state.board[i][new_j + 1]["color"].startswith("goal_")
+                            and next_state.board[i][new_j + 1]["color"] != goal_color
                         )
                     ):
                         new_j += 1
 
                     if new_j != j:
-                        temp_board[i][new_j] = temp_board[i][j]
-                        temp_board[i][j] = {
+                        next_state.board[i][new_j] = next_state.board[i][j]
+                        next_state.board[i][j] = {
                             "i": i,
                             "j": j,
                             "color": "White",
@@ -155,45 +168,42 @@ class State:
                         moved = True
 
                         if (
-                            new_j + 1 < self.size
-                            and temp_board[i][new_j + 1]["color"] == goal_color
+                            new_j + 1 < next_state.size
+                            and next_state.board[i][new_j + 1]["color"] == goal_color
                         ):
-                            temp_board[i][new_j]["color"] = "White"
-                            temp_board[i][new_j]["shape"] = "⬜️"
-                            temp_board[i][new_j + 1]["color"] = "White"
-                            temp_board[i][new_j + 1]["shape"] = "⬜️"
+                            next_state.board[i][new_j]["color"] = "White"
+                            next_state.board[i][new_j]["shape"] = "⬜️"
+                            next_state.board[i][new_j + 1]["color"] = "White"
+                            next_state.board[i][new_j + 1]["shape"] = "⬜️"
 
                 else:
                     moved = False
 
                 j -= 1
+        return next_state
+        # next_state.last_board_state = next_state
 
-        self.last_board_state = temp_board
-
-        for row in temp_board:
-            print("".join([cell["shape"] for cell in row]))
+        # for row in next_state:
+        #     print("".join([cell["shape"] for cell in row]))
 
     #######################################################################################################################
+    @classmethod
+    def left(cls, current_state):
+        next_state = copy.deepcopy(current_state)
 
-    def left(self):
-        if not hasattr(self, "last_board_state"):
-            self.last_board_state = self.board
-
-        temp_board = copy.deepcopy(self.last_board_state)
-
-        for i in range(self.size):
+        for i in range(next_state.size):
             moved = False
 
             j = 1
-            while j < self.size:
-                current_color = temp_board[i][j]["color"]
+            while j < next_state.size:
+                current_color = next_state.board[i][j]["color"]
                 goal_color = f"goal_{current_color}"
 
-                if j - 1 >= 0 and temp_board[i][j - 1]["color"] == goal_color:
-                    temp_board[i][j]["color"] = "White"
-                    temp_board[i][j]["shape"] = "⬜️"
-                    temp_board[i][j - 1]["color"] = "White"
-                    temp_board[i][j - 1]["shape"] = "⬜️"
+                if j - 1 >= 0 and next_state.board[i][j - 1]["color"] == goal_color:
+                    next_state.board[i][j]["color"] = "White"
+                    next_state.board[i][j]["shape"] = "⬜️"
+                    next_state.board[i][j - 1]["color"] = "White"
+                    next_state.board[i][j - 1]["shape"] = "⬜️"
                     moved = True
 
                     j += 1
@@ -210,17 +220,17 @@ class State:
 
                     new_j = j
                     while new_j - 1 >= 0 and (
-                        temp_board[i][new_j - 1]["color"] == "White"
+                        next_state.board[i][new_j - 1]["color"] == "White"
                         or (
-                            temp_board[i][new_j - 1]["color"].startswith("goal_")
-                            and temp_board[i][new_j - 1]["color"] != goal_color
+                            next_state.board[i][new_j - 1]["color"].startswith("goal_")
+                            and next_state.board[i][new_j - 1]["color"] != goal_color
                         )
                     ):
                         new_j -= 1
 
                     if new_j != j:
-                        temp_board[i][new_j] = temp_board[i][j]
-                        temp_board[i][j] = {
+                        next_state.board[i][new_j] = next_state.board[i][j]
+                        next_state.board[i][j] = {
                             "i": i,
                             "j": j,
                             "color": "White",
@@ -230,44 +240,38 @@ class State:
 
                         if (
                             new_j - 1 >= 0
-                            and temp_board[i][new_j - 1]["color"] == goal_color
+                            and next_state.board[i][new_j - 1]["color"] == goal_color
                         ):
-                            temp_board[i][new_j]["color"] = "White"
-                            temp_board[i][new_j]["shape"] = "⬜️"
-                            temp_board[i][new_j - 1]["color"] = "White"
-                            temp_board[i][new_j - 1]["shape"] = "⬜️"
+                            next_state.board[i][new_j]["color"] = "White"
+                            next_state.board[i][new_j]["shape"] = "⬜️"
+                            next_state.board[i][new_j - 1]["color"] = "White"
+                            next_state.board[i][new_j - 1]["shape"] = "⬜️"
 
                 else:
                     moved = False
 
                 j += 1
 
-        self.last_board_state = temp_board
-
-        for row in temp_board:
-            print("".join([cell["shape"] for cell in row]))
+        return next_state
 
     ########################################################################################################################
+    @classmethod
+    def up(cls, current_state):
+        next_state = copy.deepcopy(current_state)
 
-    def up(self):
-        if not hasattr(self, "last_board_state"):
-            self.last_board_state = self.board
-
-        temp_board = copy.deepcopy(self.last_board_state)
-
-        for j in range(self.size):
+        for j in range(next_state.size):
             moved = False
 
             i = 1
-            while i < self.size:
-                current_color = temp_board[i][j]["color"]
+            while i < next_state.size:
+                current_color = next_state.board[i][j]["color"]
                 goal_color = f"goal_{current_color}"
 
-                if i - 1 >= 0 and temp_board[i - 1][j]["color"] == goal_color:
-                    temp_board[i][j]["color"] = "White"
-                    temp_board[i][j]["shape"] = "⬜️"
-                    temp_board[i - 1][j]["color"] = "White"
-                    temp_board[i - 1][j]["shape"] = "⬜️"
+                if i - 1 >= 0 and next_state.board[i - 1][j]["color"] == goal_color:
+                    next_state.board[i][j]["color"] = "White"
+                    next_state.board[i][j]["shape"] = "⬜️"
+                    next_state.board[i - 1][j]["color"] = "White"
+                    next_state.board[i - 1][j]["shape"] = "⬜️"
                     moved = True
                     i += 1
                     continue
@@ -284,17 +288,17 @@ class State:
 
                     new_i = i
                     while new_i - 1 >= 0 and (
-                        temp_board[new_i - 1][j]["color"] == "White"
+                        next_state.board[new_i - 1][j]["color"] == "White"
                         or (
-                            temp_board[new_i - 1][j]["color"].startswith("goal_")
-                            and temp_board[new_i - 1][j]["color"] != goal_color
+                            next_state.board[new_i - 1][j]["color"].startswith("goal_")
+                            and next_state.board[new_i - 1][j]["color"] != goal_color
                         )
                     ):
                         new_i -= 1
 
                     if new_i != i:
-                        temp_board[new_i][j] = temp_board[i][j]
-                        temp_board[i][j] = {
+                        next_state.board[new_i][j] = next_state.board[i][j]
+                        next_state.board[i][j] = {
                             "i": i,
                             "j": j,
                             "color": "White",
@@ -304,44 +308,41 @@ class State:
 
                         if (
                             new_i - 1 >= 0
-                            and temp_board[new_i - 1][j]["color"] == goal_color
+                            and next_state.board[new_i - 1][j]["color"] == goal_color
                         ):
-                            temp_board[new_i][j]["color"] = "White"
-                            temp_board[new_i][j]["shape"] = "⬜️"
-                            temp_board[new_i - 1][j]["color"] = "White"
-                            temp_board[new_i - 1][j]["shape"] = "⬜️"
+                            next_state.board[new_i][j]["color"] = "White"
+                            next_state.board[new_i][j]["shape"] = "⬜️"
+                            next_state.board[new_i - 1][j]["color"] = "White"
+                            next_state.board[new_i - 1][j]["shape"] = "⬜️"
                     else:
                         i += 1
 
                 else:
                     moved = False
                     i += 1
-        self.last_board_state = temp_board
-
-        for row in temp_board:
-            print("".join([cell["shape"] for cell in row]))
+        return next_state
 
     ########################################################################################################################
+    @classmethod
+    def down(cls, current_state):
+        next_state = copy.deepcopy(current_state)
 
-    def down(self):
-        if not hasattr(self, "last_board_state"):
-            self.last_board_state = self.board
-
-        temp_board = copy.deepcopy(self.last_board_state)
-
-        for j in range(self.size):
+        for j in range(next_state.size):
             moved = False
 
-            i = self.size - 2
+            i = next_state.size - 2
             while i >= 0:
-                current_color = temp_board[i][j]["color"]
+                current_color = next_state.board[i][j]["color"]
                 goal_color = f"goal_{current_color}"
 
-                if i + 1 < self.size and temp_board[i + 1][j]["color"] == goal_color:
-                    temp_board[i][j]["color"] = "White"
-                    temp_board[i][j]["shape"] = "⬜️"
-                    temp_board[i + 1][j]["color"] = "White"
-                    temp_board[i + 1][j]["shape"] = "⬜️"
+                if (
+                    i + 1 < next_state.size
+                    and next_state.board[i + 1][j]["color"] == goal_color
+                ):
+                    next_state.board[i][j]["color"] = "White"
+                    next_state.board[i][j]["shape"] = "⬜️"
+                    next_state.board[i + 1][j]["color"] = "White"
+                    next_state.board[i + 1][j]["shape"] = "⬜️"
                     moved = True
 
                     i -= 1
@@ -358,18 +359,18 @@ class State:
                         continue
 
                     new_i = i
-                    while new_i + 1 < self.size and (
-                        temp_board[new_i + 1][j]["color"] == "White"
+                    while new_i + 1 < next_state.size and (
+                        next_state.board[new_i + 1][j]["color"] == "White"
                         or (
-                            temp_board[new_i + 1][j]["color"].startswith("goal_")
-                            and temp_board[new_i + 1][j]["color"] != goal_color
+                            next_state.board[new_i + 1][j]["color"].startswith("goal_")
+                            and next_state.board[new_i + 1][j]["color"] != goal_color
                         )
                     ):
                         new_i += 1
 
                     if new_i != i:
-                        temp_board[new_i][j] = temp_board[i][j]
-                        temp_board[i][j] = {
+                        next_state.board[new_i][j] = next_state.board[i][j]
+                        next_state.board[i][j] = {
                             "i": i,
                             "j": j,
                             "color": "White",
@@ -378,23 +379,20 @@ class State:
                         moved = True
 
                         if (
-                            new_i + 1 < self.size
-                            and temp_board[new_i + 1][j]["color"] == goal_color
+                            new_i + 1 < next_state.size
+                            and next_state.board[new_i + 1][j]["color"] == goal_color
                         ):
-                            temp_board[new_i][j]["color"] = "White"
-                            temp_board[new_i][j]["shape"] = "⬜️"
-                            temp_board[new_i + 1][j]["color"] = "White"
-                            temp_board[new_i + 1][j]["shape"] = "⬜️"
+                            next_state.board[new_i][j]["color"] = "White"
+                            next_state.board[new_i][j]["shape"] = "⬜️"
+                            next_state.board[new_i + 1][j]["color"] = "White"
+                            next_state.board[new_i + 1][j]["shape"] = "⬜️"
 
                 else:
                     moved = False
 
                 i -= 1
 
-        self.last_board_state = temp_board
-
-        for row in temp_board:
-            print("".join([cell["shape"] for cell in row]))
+        return next_state
 
     ########################################################################################################################
     def print_map(self):
@@ -406,87 +404,33 @@ class State:
             )
 
     #############################################
+    @classmethod
+    def equal(cls, state1, state2):
 
-    def equal(self, board1, board2):
-
-        for i in range(len(board1)):
-            for j in range(len(board1[i])):
-                if board1[i][j]["color"] != board2[i][j]["color"]:
+        for i in range(state1.size):
+            for j in range(state1.size):
+                if state1.board[i][j]["color"] != state2.board[i][j]["color"]:
                     return False
         return True
 
     ###########################################################################################################################
-
-    def nextstate(self, board_input):
-
-        possible_states = []
-
-        original_board = copy.deepcopy(board_input)
-
-        self.right()
-        if not self.equal(original_board, self.board):
-            possible_states.append(copy.deepcopy(self.board))
-
-        self.board = copy.deepcopy(original_board)
-
-        self.left()
-        if not self.equal(original_board, self.board):
-            possible_states.append(copy.deepcopy(self.board))
-
-        self.board = copy.deepcopy(original_board)
-
-        self.up()
-        if not self.equal(original_board, self.board):
-            possible_states.append(copy.deepcopy(self.board))
-
-        self.board = copy.deepcopy(original_board)
-
-        self.down()
-        if not self.equal(original_board, self.board):
-
-            possible_states.append(copy.deepcopy(self.board))
-
-        self.board = copy.deepcopy(original_board)
-
-        return possible_states
-
-    ##############################################################3
-    
-    
-
-    def nextstate(self, board_input):
+    @classmethod
+    def nextstate(cls, current_state):
 
         possible_states = []
 
-        original_board = copy.deepcopy(board_input)
-
-        self.right()
-        if not self.equal(original_board, self.board):
-            possible_states.append(copy.deepcopy(self.board))
-
-        self.board = copy.deepcopy(original_board)
-
-        self.left()
-        if not self.equal(original_board, self.board):
-            possible_states.append(copy.deepcopy(self.board))
-
-        self.board = copy.deepcopy(original_board)
-
-        self.up()
-        if not self.equal(original_board, self.board):
-            possible_states.append(copy.deepcopy(self.board))
-
-        self.board = copy.deepcopy(original_board)
-
-        self.down()
-        if not self.equal(original_board, self.board):
-
-            possible_states.append(copy.deepcopy(self.board))
-
-        self.board = copy.deepcopy(original_board)
-
+        r = cls.right(current_state)
+        if cls.equal(r, current_state) == False:
+            possible_states = nm.append(possible_states, r)
+        l = cls.left(current_state)
+        if cls.equal(l, current_state) == False:
+            possible_states = nm.append(possible_states, l)
+        u = cls.up(current_state)
+        if cls.equal(u, current_state) == False:
+            possible_states = nm.append(possible_states, u)
+        d = cls.down(current_state)
+        if cls.equal(d, current_state) == False:
+            possible_states = nm.append(possible_states, d)
         return possible_states
 
     ##############################################################3
-
-
