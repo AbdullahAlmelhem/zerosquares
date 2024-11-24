@@ -19,13 +19,7 @@ class State:
             "shape": shape,
         }
 
-    def get_hash(self):
-        return hash(
-            tuple(
-                tuple((cell["color"], cell["shape"]) for cell in row)
-                for row in self.board
-            )
-        )
+    
 
     #############################################
 
@@ -187,6 +181,14 @@ class State:
         #     print("".join([cell["shape"] for cell in row]))
 
     #######################################################################################################################
+    def equall(self):
+        return hash(
+            tuple(
+                tuple((cell["color"], cell["shape"]) for cell in row)
+                for row in self.board
+            )
+        )
+    ####################################################################################################################
     @classmethod
     def left(cls, current_state):
         next_state = copy.deepcopy(current_state)
