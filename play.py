@@ -117,8 +117,32 @@ else:
     
 
 
-################   DFS ##################
+# ################   DFS ##################
 solution_path = Algorithm.dfs(a)
+
+
+if solution_path:
+    print("Solution found!")
+    for step in solution_path:
+        for row in step.board:
+            print("".join(cell["shape"] for cell in row))
+        print("\n")
+else:
+    print("No solution found!")
+# ###################dfs_recursive#######################
+visited = {} 
+solution_path, state_count = Algorithm.dfs_recursive(a, visited)
+
+if solution_path:
+    print("Solution found!")
+    for step in solution_path:
+        for row in step.board:
+            print("".join(cell["shape"] for cell in row))
+        print("\n")
+else:
+    print("No solution found!")
+#################### ucs #######################
+solution_path = Algorithm.ucs(a)
 
 
 if solution_path:

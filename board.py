@@ -8,7 +8,11 @@ class State:
         self.size = size
         self.board = nm.full((size, size), fill_value="0", dtype="object")
         self.parent = None
+        self.cost=0
 
+    #############################################
+    def  __lt__(self,other):
+        return self.cost<other.cost
     #############################################
     def color(self, i, j, color, shape):
 
