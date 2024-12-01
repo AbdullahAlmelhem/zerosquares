@@ -140,17 +140,17 @@ a.print_map()
 
 
 ################   BFS  ######################
-solution_path = Algorithm.bfs(a)
+# solution_path = Algorithm.bfs(a)
 
 
-if solution_path:
-    print("Solution found!")
-    for step in solution_path:
-        for row in step.board:
-            print("".join(cell["shape"] for cell in row))
-        print("\n")
-else:
-    print("No solution found!")
+# if solution_path:
+#     print("Solution found!")
+#     for step in solution_path:
+#         for row in step.board:
+#             print("".join(cell["shape"] for cell in row))
+#         print("\n")
+# else:
+#     print("No solution found!")
 
     
 
@@ -193,3 +193,12 @@ else:
 #     print("No solution found!")
 
     
+solution_path = Algorithm.a_star(a)
+
+if solution_path:
+    print("Solution found with A*!")
+    for step in solution_path:
+        step.print_map()
+        print("\n")
+else:
+    print("No solution found with A*!")
