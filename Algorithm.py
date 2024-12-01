@@ -149,3 +149,18 @@ def ucs(start_state):
 
     print(f"Total states visited: {state_count}")
     return None
+from queue import PriorityQueue
+def heuristic(state):
+        cost = 0
+        for i in range(state.size):
+            for j in range(state.size):
+                cell = state.board[i][j]
+                if cell["color"].startswith("goal_"):
+                    goal_color = cell["color"][5:] 
+                    for x in range(state.size):
+                        for y in range(state.size):
+                            piece = state.board[x][y]
+                            if piece["color"] == goal_color:
+                                
+                                cost += abs(i - x) + abs(j - y)
+        return cost
