@@ -1,0 +1,39 @@
+--------------------BFS--------------------
+Path_length: 50
+Visited: 302
+Cost: 105
+Execution Time: 4.3342 seconds
+----------------------------------------
+--------------------DFS--------------------
+Path_length: 63
+Visited: 250
+Cost: 164
+Execution Time: 8.5456 seconds
+----------------------------------------
+--------------------dfs_recursive--------------------
+Path_length: 63
+Visited: 250
+Cost: 164
+Execution Time: 8.5456 seconds
+----------------------------------------
+
+--------------------UCS--------------------
+Path_length: 53
+Visited: 311
+Cost: 105
+Execution Time: 4.3467 seconds
+----------------------------------------
+
+--------------------A*--------------------
+Path_length: 53
+Visited: 301
+Cost: 105
+Execution Time: 2.9442 seconds
+---------------------------------------
+
+--------------------steepest_hill_climbing--------------------
+Path_length: 0
+Visited: 3
+Cost: None
+Execution Time: 0.0080 seconds
+----------------------------------------

@@ -4,9 +4,10 @@ from collections import deque
 
 
 class State:
-    def __init__(self, size):
-        self.size = size
-        self.board = nm.full((size, size), fill_value="0", dtype="object")
+    def __init__(self, rows,cols):
+        self.rows=rows
+        self.cols=cols
+        self.board = nm.full((rows, cols), fill_value="0", dtype="object")
         self.parent = None
         self.cost=0
 
@@ -53,8 +54,8 @@ class State:
     #############################################
     @classmethod
     def chekc_win(cls, state):
-        for i in range(0, state.size):
-            for j in range(0, state.size):
+        for i in range(0, state.rows):
+            for j in range(0, state.cols):
                 if state.board[i][j]["color"] not in ["White", "Black"]:
                     return False
 
@@ -114,17 +115,18 @@ class State:
 
         # temp_board = copy.deepcopy(self.last_board_state)
 
-        for i in range(next_state.size):
+        for i in range(next_state.rows):
             moved = False
 
-            j = next_state.size - 2
+            j = next_state.cols - 2
             while j >= 0:
                 current_color = next_state.board[i][j]["color"]
                 goal_color = f"goal_{current_color}"
+                goal_v="V"
 
                 if (
-                    j + 1 < next_state.size
-                    and next_state.board[i][j + 1]["color"] == goal_color
+                    j + 1 < next_state.cols
+                    and next_state.board[i][j + 1]["color"] == goal_color or next_state.board[i][j + 1]["color"] == goal_v
                 ):
 
                     next_state.board[i][j]["color"] = "White"
@@ -137,7 +139,7 @@ class State:
                     continue
                 if (
                     current_color != "White"
-                    and current_color != "Black"
+                    and current_color != "Black" and current_color!="goal_v"
                     and not current_color.startswith("goal_")
                 ):
                     if moved:
@@ -146,7 +148,7 @@ class State:
                         continue
 
                     new_j = j
-                    while new_j + 1 < next_state.size and (
+                    while new_j + 1 < next_state.cols and (
                         next_state.board[i][new_j + 1]["color"] == "White"
                         or (
                             next_state.board[i][new_j + 1]["color"].startswith("goal_")
@@ -164,9 +166,16 @@ class State:
                             "shape": "⬜️",
                         }
                         moved = True
-
                         if (
-                            new_j + 1 < next_state.size
+                            new_j + 1 < next_state.cols
+                            and next_state.board[i][new_j + 1]["color"] == goal_v
+                        ):
+                            next_state.board[i][new_j]["color"] = "White"
+                            next_state.board[i][new_j]["shape"] = "⬜️"
+                            next_state.board[i][new_j + 1]["color"] = "White"
+                            next_state.board[i][new_j + 1]["shape"] = "⬜️"
+                        elif (
+                            new_j + 1 < next_state.cols
                             and next_state.board[i][new_j + 1]["color"] == goal_color
                         ):
                             next_state.board[i][new_j]["color"] = "White"
@@ -185,7 +194,7 @@ class State:
         #     print("".join([cell["shape"] for cell in row]))
 
     #######################################################################################################################
-    def equall(self):
+    def get_hash(self):
         return hash(
             tuple(
                 tuple((cell["color"], cell["shape"]) for cell in row)
@@ -197,15 +206,23 @@ class State:
     def left(cls, current_state):
         next_state = copy.deepcopy(current_state)
 
-        for i in range(next_state.size):
+        for i in range(next_state.rows):
             moved = False
 
             j = 1
-            while j < next_state.size:
+            while j < next_state.cols:
                 current_color = next_state.board[i][j]["color"]
                 goal_color = f"goal_{current_color}"
+                goal_v = "V"
 
-                if j - 1 >= 0 and next_state.board[i][j - 1]["color"] == goal_color:
+                # Handle case where a goal or goal_v is to be moved
+                if (
+                    j - 1 >= 0
+                    and (
+                        next_state.board[i][j - 1]["color"] == goal_color
+                        or next_state.board[i][j - 1]["color"] == goal_v
+                    )
+                ):
                     next_state.board[i][j]["color"] = "White"
                     next_state.board[i][j]["shape"] = "⬜️"
                     next_state.board[i][j - 1]["color"] = "White"
@@ -214,6 +231,8 @@ class State:
 
                     j += 1
                     continue
+
+                # Process piece movement if it's not white or black or goal
                 if (
                     current_color != "White"
                     and current_color != "Black"
@@ -244,7 +263,16 @@ class State:
                         }
                         moved = True
 
+                        # If the new position leads to a goal or goal_v, handle the removal
                         if (
+                            new_j - 1 >= 0
+                            and next_state.board[i][new_j - 1]["color"] == goal_v
+                        ):
+                            next_state.board[i][new_j]["color"] = "White"
+                            next_state.board[i][new_j]["shape"] = "⬜️"
+                            next_state.board[i][new_j - 1]["color"] = "White"
+                            next_state.board[i][new_j - 1]["shape"] = "⬜️"
+                        elif (
                             new_j - 1 >= 0
                             and next_state.board[i][new_j - 1]["color"] == goal_color
                         ):
@@ -265,23 +293,33 @@ class State:
     def up(cls, current_state):
         next_state = copy.deepcopy(current_state)
 
-        for j in range(next_state.size):
+        for j in range(next_state.cols):  # Iterate over columns (as the movement is vertical)
             moved = False
 
-            i = 1
-            while i < next_state.size:
+            i = 1  # Start at the second row (moving upwards)
+            while i < next_state.rows:  # Move upwards until the first row
                 current_color = next_state.board[i][j]["color"]
                 goal_color = f"goal_{current_color}"
+                goal_v = "V"  # The goal_v color, which we'll treat the same way
 
-                if i - 1 >= 0 and next_state.board[i - 1][j]["color"] == goal_color:
+                # Handle case where a goal or goal_v is to be moved
+                if (
+                    i - 1 >= 0
+                    and (
+                        next_state.board[i - 1][j]["color"] == goal_color
+                        or next_state.board[i - 1][j]["color"] == goal_v
+                    )
+                ):
                     next_state.board[i][j]["color"] = "White"
                     next_state.board[i][j]["shape"] = "⬜️"
                     next_state.board[i - 1][j]["color"] = "White"
                     next_state.board[i - 1][j]["shape"] = "⬜️"
                     moved = True
+
                     i += 1
                     continue
 
+                # Process piece movement if it's not white, black, or goal
                 if (
                     current_color != "White"
                     and current_color != "Black"
@@ -312,7 +350,16 @@ class State:
                         }
                         moved = True
 
+                        # If the new position leads to a goal or goal_v, handle the removal
                         if (
+                            new_i - 1 >= 0
+                            and next_state.board[new_i - 1][j]["color"] == goal_v
+                        ):
+                            next_state.board[new_i][j]["color"] = "White"
+                            next_state.board[new_i][j]["shape"] = "⬜️"
+                            next_state.board[new_i - 1][j]["color"] = "White"
+                            next_state.board[new_i - 1][j]["shape"] = "⬜️"
+                        elif (
                             new_i - 1 >= 0
                             and next_state.board[new_i - 1][j]["color"] == goal_color
                         ):
@@ -322,10 +369,10 @@ class State:
                             next_state.board[new_i - 1][j]["shape"] = "⬜️"
                     else:
                         i += 1
-
                 else:
                     moved = False
                     i += 1
+
         return next_state
 
     ########################################################################################################################
@@ -333,17 +380,22 @@ class State:
     def down(cls, current_state):
         next_state = copy.deepcopy(current_state)
 
-        for j in range(next_state.size):
+        for j in range(next_state.cols):  # Iterate over columns (since it's vertical movement)
             moved = False
 
-            i = next_state.size - 2
-            while i >= 0:
+            i = next_state.rows - 2  # Start from the second-to-last row
+            while i >= 0:  # Move downwards
                 current_color = next_state.board[i][j]["color"]
                 goal_color = f"goal_{current_color}"
+                goal_v = "V"  # The goal_v color, to handle it similarly
 
+                # Handle case where a goal or goal_v is to be moved
                 if (
-                    i + 1 < next_state.size
-                    and next_state.board[i + 1][j]["color"] == goal_color
+                    i + 1 < next_state.rows
+                    and (
+                        next_state.board[i + 1][j]["color"] == goal_color
+                        or next_state.board[i + 1][j]["color"] == goal_v
+                    )
                 ):
                     next_state.board[i][j]["color"] = "White"
                     next_state.board[i][j]["shape"] = "⬜️"
@@ -354,6 +406,7 @@ class State:
                     i -= 1
                     continue
 
+                # Process piece movement if it's not white, black, or goal
                 if (
                     current_color != "White"
                     and current_color != "Black"
@@ -365,7 +418,7 @@ class State:
                         continue
 
                     new_i = i
-                    while new_i + 1 < next_state.size and (
+                    while new_i + 1 < next_state.rows and (
                         next_state.board[new_i + 1][j]["color"] == "White"
                         or (
                             next_state.board[new_i + 1][j]["color"].startswith("goal_")
@@ -384,19 +437,28 @@ class State:
                         }
                         moved = True
 
+                        # If the new position leads to a goal or goal_v, handle the removal
                         if (
-                            new_i + 1 < next_state.size
+                            new_i + 1 < next_state.rows
+                            and next_state.board[new_i + 1][j]["color"] == goal_v
+                        ):
+                            next_state.board[new_i][j]["color"] = "White"
+                            next_state.board[new_i][j]["shape"] = "⬜️"
+                            next_state.board[new_i + 1][j]["color"] = "White"
+                            next_state.board[new_i + 1][j]["shape"] = "⬜️"
+                        elif (
+                            new_i + 1 < next_state.rows
                             and next_state.board[new_i + 1][j]["color"] == goal_color
                         ):
                             next_state.board[new_i][j]["color"] = "White"
                             next_state.board[new_i][j]["shape"] = "⬜️"
                             next_state.board[new_i + 1][j]["color"] = "White"
                             next_state.board[new_i + 1][j]["shape"] = "⬜️"
-
+                    else:
+                        i -= 1
                 else:
                     moved = False
-
-                i -= 1
+                    i -= 1
 
         return next_state
 
@@ -413,8 +475,8 @@ class State:
     @classmethod
     def equal(cls, state1, state2):
 
-        for i in range(state1.size):
-            for j in range(state1.size):
+        for i in range(state1.rows):
+            for j in range(state1.cols):
                 if state1.board[i][j]["color"] != state2.board[i][j]["color"]:
                     return False
         return True
